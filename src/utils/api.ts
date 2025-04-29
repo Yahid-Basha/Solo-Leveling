@@ -148,7 +148,6 @@ export const questsApi = {
     }
   },
 
-  // Update the updateTask function
   updateTask: async (
     id: string,
     updates: Partial<Task>
@@ -191,14 +190,46 @@ export const questsApi = {
     taskId: string,
     proofImage: File | string
   ): Promise<ApiResponse<{ verified: boolean; points: number }>> => {
-    // For now, return a mock response
-    return {
-      success: true,
-      data: {
-        verified: true,
-        points: Math.floor(Math.random() * 50) + 20,
-      },
-    };
+    if (proofImage instanceof File) {
+      const headers = await getAuthHeaders();
+      const formData = new FormData();
+      formData.append("proofImage", proofImage);
+
+      try {
+        const response = await axios.post(
+          `${API_URL}/tasks/${taskId}/verify`,
+          formData,
+          {
+            headers: {
+              ...headers,
+              "Content-Type": "multipart/form-data",
+            },
+          }
+        );
+        return {
+          success: true,
+          data: response.data,
+        };
+      } catch (error: unknown) {
+        console.error("Error verifying task completion:", error);
+        if (axios.isAxiosError(error)) {
+          return {
+            success: false,
+            error: error.response?.data?.analysis || error.message,
+          };
+        }
+
+        return {
+          success: false,
+          error: "An unexpected error occurred",
+        };
+      }
+    } else {
+      return {
+        success: false,
+        error: "Uploaded file is not an image",
+      };
+    }
   },
 
   retryVerification: async (
@@ -207,6 +238,10 @@ export const questsApi = {
     notes: string
   ): Promise<ApiResponse<{ verified: boolean; points: number }>> => {
     // For now, return a mock response
+    console.log("Retrying verification...");
+    console.log("Task ID:", taskId);
+    console.log("Proof image:", proofImage);
+    console.log("Notes:", notes);
     return {
       success: true,
       data: {

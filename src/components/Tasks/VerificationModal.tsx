@@ -1,33 +1,46 @@
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { X, Upload, Award, AlertCircle } from 'lucide-react';
-import { Task } from '../../types';
-import ConfettiEffect from '../UI/ConfettiEffect';
+import React, { useState } from "react";
+import { motion } from "framer-motion";
+import { X, Upload, Award, AlertCircle } from "lucide-react";
+import { Task } from "../../types";
+import ConfettiEffect from "../UI/ConfettiEffect";
 
 interface VerificationModalProps {
   isOpen: boolean;
   onClose: () => void;
   task: Task | null;
-  onVerify: (taskId: string, proofImage: File | string) => Promise<{ verified: boolean; points: number }>;
-  onRetry: (taskId: string, proofImage: File | string, notes: string) => Promise<{ verified: boolean; points: number }>;
+  onVerify: (
+    taskId: string,
+    proofImage: File | string
+  ) => Promise<{
+    success: boolean;
+    data: { verified: boolean; points: number; analysis: string; task: any };
+  }>;
+  onRetry: (
+    taskId: string,
+    proofImage: File | string,
+    notes: string
+  ) => Promise<{ verified: boolean; points: number }>;
   retryChances: number;
 }
 
-const VerificationModal: React.FC<VerificationModalProps> = ({ 
-  isOpen, 
-  onClose, 
+const VerificationModal: React.FC<VerificationModalProps> = ({
+  isOpen,
+  onClose,
   task,
   onVerify,
   onRetry,
-  retryChances
+  retryChances,
 }) => {
-  const [step, setStep] = useState<'initial' | 'result' | 'retry'>('initial');
+  const [step, setStep] = useState<"initial" | "result" | "retry">("initial");
   const [proofImage, setProofImage] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string>('');
-  const [additionalNotes, setAdditionalNotes] = useState('');
+  const [previewUrl, setPreviewUrl] = useState<string>("");
+  const [additionalNotes, setAdditionalNotes] = useState("");
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<{ verified: boolean; points: number } | null>(null);
-  const [error, setError] = useState('');
+  const [result, setResult] = useState<{
+    success: boolean;
+    data: { verified: boolean; points: number; analysis: string; task: any };
+  } | null>(null);
+  const [error, setError] = useState("");
   const [showConfetti, setShowConfetti] = useState(false);
 
   if (!isOpen || !task) return null;
@@ -35,6 +48,10 @@ const VerificationModal: React.FC<VerificationModalProps> = ({
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      if (!file.type.startsWith("image/")) {
+        setError("Please upload a valid image file");
+        return;
+      }
       setProofImage(file);
       setPreviewUrl(URL.createObjectURL(file));
     }
@@ -42,28 +59,46 @@ const VerificationModal: React.FC<VerificationModalProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
-    
+    setError("");
+
     if (!proofImage && !previewUrl) {
-      setError('Please upload proof of completion');
+      setError("Please upload proof of completion");
       return;
     }
-    
+
     setLoading(true);
     try {
       // Use a placeholder image URL for demo
-      const placeholderImage = previewUrl || 'https://images.pexels.com/photos/5611966/pexels-photo-5611966.jpeg';
-      
-      const verificationResult = await onVerify(task.id, placeholderImage);
+
+      const placeholderImage =
+        previewUrl ||
+        "https://images.pexels.com/photos/5611966/pexels-photo-5611966.jpeg";
+
+      const verificationResult = await onVerify(
+        task.id,
+        proofImage || placeholderImage
+      );
+      console.log("Verification result:", verificationResult);
       setResult(verificationResult);
-      setStep('result');
-      
-      if (verificationResult.verified) {
+      setStep("result");
+
+      if (verificationResult.data.verified) {
+        console.log("TRUEEE");
         setShowConfetti(true);
       }
-    } catch (err) {
-      setError('Verification failed. Please try again.');
-      console.error('Verification error:', err);
+    } catch (err: any) {
+      if (err.response?.data?.error) {
+        setError(err.response.data.error);
+      } else {
+        setError("Verification failed. Please try again." + err);
+      }
+      if (err.response?.data?.analysis) {
+        setError(
+          "Verification failed. Please try again. \n" +
+            err.response.data.analysis
+        );
+        console.error("Verification error:", err);
+      }
     } finally {
       setLoading(false);
     }
@@ -71,53 +106,59 @@ const VerificationModal: React.FC<VerificationModalProps> = ({
 
   const handleRetrySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
-    
+    setError("");
+
     if (!proofImage && !previewUrl) {
-      setError('Please upload proof of completion');
+      setError("Please upload proof of completion");
       return;
     }
-    
+
     if (retryChances <= 0) {
-      setError('No retry chances left');
+      setError("No retry chances left");
       return;
     }
-    
+
     setLoading(true);
     try {
       // Use a placeholder image URL for demo
-      const placeholderImage = previewUrl || 'https://images.pexels.com/photos/3243090/pexels-photo-3243090.jpeg';
-      
-      const retryResult = await onRetry(task.id, placeholderImage, additionalNotes);
+      const placeholderImage =
+        previewUrl ||
+        "https://images.pexels.com/photos/3243090/pexels-photo-3243090.jpeg";
+
+      const retryResult = await onRetry(
+        task.id,
+        placeholderImage,
+        additionalNotes
+      );
       setResult(retryResult);
-      setStep('result');
-      
+      setStep("result");
+
       if (retryResult.verified) {
         setShowConfetti(true);
       }
     } catch (err) {
-      setError('Retry failed. Please try again.');
-      console.error('Retry error:', err);
+      setError("Retry failed. Please try again.");
+      console.error("Retry error:", err);
     } finally {
       setLoading(false);
     }
   };
 
   const resetModal = () => {
-    setStep('initial');
+    setStep("initial");
     setProofImage(null);
-    setPreviewUrl('');
-    setAdditionalNotes('');
+    setPreviewUrl("");
+    setAdditionalNotes("");
     setResult(null);
-    setError('');
+    setError("");
     setShowConfetti(false);
     onClose();
   };
 
   const handleRetry = () => {
-    setStep('retry');
+    setStep("retry");
     setProofImage(null);
-    setPreviewUrl('');
+    setPreviewUrl("");
   };
 
   return (
@@ -129,21 +170,23 @@ const VerificationModal: React.FC<VerificationModalProps> = ({
       onClick={resetModal}
     >
       <ConfettiEffect show={showConfetti} />
-      
+
       <motion.div
         initial={{ y: 50, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         exit={{ y: 50, opacity: 0 }}
-        transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+        transition={{ type: "spring", damping: 25, stiffness: 300 }}
         className="bg-white max-h-[90vh] w-full max-w-md rounded-2xl overflow-y-auto shadow-xl m-4"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="p-6">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-semibold text-gray-900">
-              {step === 'initial' ? 'Verify Task Completion' : 
-               step === 'result' ? 'Verification Result' : 
-               'Retry Verification'}
+              {step === "initial"
+                ? "Verify Task Completion"
+                : step === "result"
+                  ? "Verification Result"
+                  : "Retry Verification"}
             </h2>
             <button
               onClick={resetModal}
@@ -152,28 +195,31 @@ const VerificationModal: React.FC<VerificationModalProps> = ({
               <X className="w-5 h-5 text-gray-500" />
             </button>
           </div>
-          
-          {step === 'initial' && (
+
+          {step === "initial" && (
             <form onSubmit={handleSubmit} className="space-y-5">
               <div>
                 <p className="text-gray-700 mb-4">
-                  <span className="font-medium text-gray-900">{task.title}</span> is marked as completed. 
-                  Please upload proof of completion to earn points.
+                  <span className="font-medium text-gray-900">
+                    {task.title}
+                  </span>{" "}
+                  is marked as completed. Please upload proof of completion to
+                  earn points.
                 </p>
-                
+
                 <div className="border-2 border-dashed border-gray-300 rounded-xl p-4 text-center">
                   {previewUrl ? (
                     <div className="space-y-4">
-                      <img 
-                        src={previewUrl} 
-                        alt="Proof preview" 
+                      <img
+                        src={previewUrl}
+                        alt="Proof preview"
                         className="max-h-64 rounded-lg mx-auto object-contain"
                       />
                       <button
                         type="button"
                         onClick={() => {
                           setProofImage(null);
-                          setPreviewUrl('');
+                          setPreviewUrl("");
                         }}
                         className="text-sm text-red-500 hover:text-red-600"
                       >
@@ -203,11 +249,9 @@ const VerificationModal: React.FC<VerificationModalProps> = ({
                   )}
                 </div>
               </div>
-              
-              {error && (
-                <p className="text-red-500 text-sm">{error}</p>
-              )}
-              
+
+              {error && <p className="text-red-500 text-sm">{error}</p>}
+
               <div className="flex space-x-3">
                 <button
                   type="button"
@@ -216,29 +260,35 @@ const VerificationModal: React.FC<VerificationModalProps> = ({
                 >
                   Cancel
                 </button>
-                
+
                 <button
                   type="submit"
                   disabled={loading}
                   className="flex-1 py-3 px-4 bg-[#0071e3] text-white rounded-lg font-medium hover:bg-blue-600 transition-colors disabled:opacity-70"
                 >
-                  {loading ? 'Verifying...' : 'Submit for Verification'}
+                  {loading ? "Verifying..." : "Submit for Verification"}
                 </button>
               </div>
             </form>
           )}
-          
-          {step === 'result' && result && (
+
+          {step === "result" && result && (
             <div className="space-y-6">
               <div className="text-center py-6">
-                {result.verified ? (
+                {result.data.verified ? (
                   <div className="space-y-4">
                     <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto">
                       <Award className="w-8 h-8 text-green-600" />
                     </div>
-                    <h3 className="text-xl font-bold text-gray-900">Verification Successful!</h3>
+                    <h3 className="text-xl font-bold text-gray-900">
+                      Verification Successful!
+                    </h3>
                     <p className="text-gray-600">
-                      Congratulations! You've earned <span className="font-semibold text-[#0071e3]">{result.points} points</span> for completing this task.
+                      Congratulations! You've earned{" "}
+                      <span className="font-semibold text-[#0071e3]">
+                        {result.data.points} points
+                      </span>{" "}
+                      for completing this task.
                     </p>
                   </div>
                 ) : (
@@ -246,20 +296,24 @@ const VerificationModal: React.FC<VerificationModalProps> = ({
                     <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto">
                       <AlertCircle className="w-8 h-8 text-red-600" />
                     </div>
-                    <h3 className="text-xl font-bold text-gray-900">Verification Failed</h3>
+                    <h3 className="text-xl font-bold text-gray-900">
+                      Verification Failed
+                    </h3>
                     <p className="text-gray-600">
-                      We couldn't verify your task completion. Please try again with clearer proof.
+                      We couldn't verify your task completion. Please try again
+                      with clearer proof.
                     </p>
                   </div>
                 )}
               </div>
-              
-              {result.verified && (
+
+              {result.success && (
                 <div className="bg-[#f5f5f7] rounded-xl p-4">
                   <p className="text-sm text-gray-600 mb-2">
-                    Feel like you deserved more points? You have {retryChances} retry chances left this quarter.
+                    Feel like you deserved more points? You have {retryChances}{" "}
+                    retry chances left this quarter.
                   </p>
-                  
+
                   {retryChances > 0 ? (
                     <button
                       onClick={handleRetry}
@@ -274,7 +328,7 @@ const VerificationModal: React.FC<VerificationModalProps> = ({
                   )}
                 </div>
               )}
-              
+
               <div className="flex">
                 <button
                   onClick={resetModal}
@@ -285,27 +339,29 @@ const VerificationModal: React.FC<VerificationModalProps> = ({
               </div>
             </div>
           )}
-          
-          {step === 'retry' && (
+
+          {step === "retry" && (
             <form onSubmit={handleRetrySubmit} className="space-y-5">
               <div>
                 <p className="text-gray-700 mb-4">
-                  You're using 1 of your {retryChances} retry chances. Upload better proof and add supporting information to earn more points.
+                  You're using 1 of your {retryChances} retry chances. Upload
+                  better proof and add supporting information to earn more
+                  points.
                 </p>
-                
+
                 <div className="border-2 border-dashed border-gray-300 rounded-xl p-4 text-center mb-4">
                   {previewUrl ? (
                     <div className="space-y-4">
-                      <img 
-                        src={previewUrl} 
-                        alt="Proof preview" 
+                      <img
+                        src={previewUrl}
+                        alt="Proof preview"
                         className="max-h-64 rounded-lg mx-auto object-contain"
                       />
                       <button
                         type="button"
                         onClick={() => {
                           setProofImage(null);
-                          setPreviewUrl('');
+                          setPreviewUrl("");
                         }}
                         className="text-sm text-red-500 hover:text-red-600"
                       >
@@ -334,9 +390,12 @@ const VerificationModal: React.FC<VerificationModalProps> = ({
                     </div>
                   )}
                 </div>
-                
+
                 <div>
-                  <label htmlFor="additional-notes" className="block text-sm font-medium text-gray-700 mb-1">
+                  <label
+                    htmlFor="additional-notes"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
                     Supporting Information
                   </label>
                   <textarea
@@ -349,26 +408,24 @@ const VerificationModal: React.FC<VerificationModalProps> = ({
                   ></textarea>
                 </div>
               </div>
-              
-              {error && (
-                <p className="text-red-500 text-sm">{error}</p>
-              )}
-              
+
+              {error && <p className="text-red-500 text-sm">{error}</p>}
+
               <div className="flex space-x-3">
                 <button
                   type="button"
-                  onClick={() => setStep('result')}
+                  onClick={() => setStep("result")}
                   className="flex-1 py-3 px-4 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition-colors"
                 >
                   Cancel
                 </button>
-                
+
                 <button
                   type="submit"
                   disabled={loading}
                   className="flex-1 py-3 px-4 bg-[#0071e3] text-white rounded-lg font-medium hover:bg-blue-600 transition-colors disabled:opacity-70"
                 >
-                  {loading ? 'Submitting...' : 'Submit Retry'}
+                  {loading ? "Submitting..." : "Submit Retry"}
                 </button>
               </div>
             </form>

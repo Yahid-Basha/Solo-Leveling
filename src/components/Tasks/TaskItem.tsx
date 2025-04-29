@@ -63,6 +63,7 @@ const TaskItem: React.FC<TaskItemProps> = ({
   };
 
   const needsVerification = task.status === "completed" && !task.verified;
+  // console.log("TaskItem rendered", task.title, task.verified);
 
   return (
     <motion.div

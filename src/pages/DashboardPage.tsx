@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
-import { useQuests } from "../context/QuestContext";
+import { useAuth } from "../hooks/useAuth";
+import { useQuests } from "../hooks/useQuest";
 import Navigation from "../components/UI/Navigation";
 import QuestCard from "../components/Quests/QuestCard";
 import TaskItem from "../components/Tasks/TaskItem";
@@ -13,7 +13,7 @@ import { Task } from "../types";
 
 const DashboardPage: React.FC = () => {
   const { user } = useAuth();
-  console.log("User:", user);
+
   const {
     quests,
     tasks,

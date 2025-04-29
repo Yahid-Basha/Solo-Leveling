@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import Navigation from "../components/UI/Navigation";
 import AddTaskModal from "../components/Tasks/AddTaskModal";
 import QuestCard from "../components/Quests/QuestCard";
-import { useQuests } from "../context/QuestContext";
+import { useQuests } from "../hooks/useQuest";
 import { Plus } from "lucide-react";
 
 const AddTaskPage: React.FC = () => {

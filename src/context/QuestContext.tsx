@@ -1,9 +1,9 @@
-import React, { createContext, useState, useContext, useEffect } from "react";
-import { useAuth } from "./AuthContext";
+import React, { createContext, useState, useEffect } from "react";
 import { Quest, Task, DashboardData } from "../types";
 import { questsApi } from "../utils/api";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../hooks/useAuth";
 
 interface ApiResponse<T> {
   success: boolean;
@@ -40,7 +40,7 @@ interface QuestContextType {
   ) => Promise<{ verified: boolean; points: number }>;
 }
 
-const QuestContext = createContext<QuestContextType>({
+export const QuestContext = createContext<QuestContextType>({
   loading: false,
   quests: [],
   tasks: [],
@@ -56,8 +56,6 @@ const QuestContext = createContext<QuestContextType>({
   verifyTask: async () => ({ verified: false, points: 0 }),
   retryVerification: async () => ({ verified: false, points: 0 }),
 });
-
-export const useQuests = () => useContext(QuestContext);
 
 export const QuestProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
@@ -235,6 +233,7 @@ export const QuestProvider: React.FC<{ children: React.ReactNode }> = ({
 
     setLoading(true);
     try {
+      console.log("QuestContext: typeof proofImage", typeof proofImage);
       const response = await questsApi.verifyTaskCompletion(taskId, proofImage);
 
       if (response.success && response.data) {

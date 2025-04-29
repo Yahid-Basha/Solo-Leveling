@@ -1,15 +1,16 @@
-import React, { useEffect, useState } from 'react';
-import Confetti from 'react-confetti';
+import React, { useEffect, useState } from "react";
+import Confetti from "react-confetti";
 
 interface ConfettiEffectProps {
   show: boolean;
   duration?: number; // in milliseconds
 }
 
-const ConfettiEffect: React.FC<ConfettiEffectProps> = ({ 
+const ConfettiEffect: React.FC<ConfettiEffectProps> = ({
   show,
-  duration = 5000
+  duration = 5000,
 }) => {
+  console.log(show);
   const [showConfetti, setShowConfetti] = useState(false);
   const [windowSize, setWindowSize] = useState({
     width: window.innerWidth,
@@ -24,8 +25,8 @@ const ConfettiEffect: React.FC<ConfettiEffectProps> = ({
       });
     };
 
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
   }, []);
 
   useEffect(() => {
@@ -34,7 +35,7 @@ const ConfettiEffect: React.FC<ConfettiEffectProps> = ({
       const timer = setTimeout(() => {
         setShowConfetti(false);
       }, duration);
-      
+
       return () => clearTimeout(timer);
     }
   }, [show, duration]);
@@ -48,7 +49,7 @@ const ConfettiEffect: React.FC<ConfettiEffectProps> = ({
       recycle={true}
       numberOfPieces={500}
       gravity={0.1}
-      colors={['#0071e3', '#00c2ff', '#e0f7ff', '#ffffff', '#ffd60a']}
+      colors={["#0071e3", "#00c2ff", "#e0f7ff", "#ffffff", "#ffd60a"]}
     />
   );
 };

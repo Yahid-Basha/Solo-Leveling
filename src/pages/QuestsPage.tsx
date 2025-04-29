@@ -5,7 +5,7 @@ import QuestCard from "../components/Quests/QuestCard";
 import TaskItem from "../components/Tasks/TaskItem";
 import VerificationModal from "../components/Tasks/VerificationModal";
 import AddTaskModal from "../components/Tasks/AddTaskModal";
-import { useQuests } from "../context/QuestContext";
+import { useQuests } from "../hooks/useQuest";
 import { Trophy, Star, CheckCircle, Clock, X, Plus } from "lucide-react";
 import { Task } from "../types";
 

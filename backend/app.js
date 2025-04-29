@@ -3,6 +3,7 @@ import cors from "cors";
 import dotenv from "dotenv";
 import questsRoutes from "./routes/quests.js";
 import tasksRoutes from "./routes/tasks.js";
+import verificationRoutes from "./routes/verification.js";
 
 dotenv.config();
 const app = express();
@@ -12,6 +13,7 @@ app.use(express.json());
 
 app.use("/quests", questsRoutes);
 app.use("/tasks", tasksRoutes);
+app.use("/verification", verificationRoutes);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

@@ -1,10 +1,10 @@
-import { db } from '../utils/supabaseClient.js';
+import { db } from "../utils/supabaseClient.js";
 
 // POST /quests → Insert new quest
 export const createQuest = async (req, res) => {
   const { title, is_main } = req.body;
 
-  if (!title) return res.status(400).json({ error: 'Title is required' });
+  if (!title) return res.status(400).json({ error: "Title is required" });
 
   const quarter = getCurrentQuarter();
   const query = `
@@ -14,11 +14,16 @@ export const createQuest = async (req, res) => {
   `;
 
   try {
-    const result = await db.query(query, [req.user.id, title, is_main, quarter]);
+    const result = await db.query(query, [
+      req.user.id,
+      title,
+      is_main,
+      quarter,
+    ]);
     res.status(201).json(result.rows[0]);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: 'Database error inserting quest' });
+    res.status(500).json({ error: "Database error inserting quest" });
   }
 };
 
@@ -35,7 +40,28 @@ export const getQuests = async (req, res) => {
     res.json(result.rows);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: 'Database error fetching quests' });
+    res.status(500).json({ error: "Database error fetching quests" });
+  }
+};
+
+// GET /quests/:id → Fetch quest by ID
+export const getQuestById = async (req, res) => {
+  const { id } = req.params;
+
+  const query = `
+    SELECT * FROM quests
+    WHERE id = $1 AND user_id = $2;
+  `;
+
+  try {
+    const result = await db.query(query, [id, req.user.id]);
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: "Quest not found" });
+    }
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Database error fetching quest" });
   }
 };
 
@@ -57,14 +83,21 @@ export const updateQuest = async (req, res) => {
   `;
 
   try {
-    const result = await db.query(query, [title, is_main, completed, progress, id, req.user.id]);
+    const result = await db.query(query, [
+      title,
+      is_main,
+      completed,
+      progress,
+      id,
+      req.user.id,
+    ]);
     if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Quest not found' });
+      return res.status(404).json({ error: "Quest not found" });
     }
     res.json(result.rows[0]);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: 'Database error updating quest' });
+    res.status(500).json({ error: "Database error updating quest" });
   }
 };
 
@@ -81,12 +114,12 @@ export const deleteQuest = async (req, res) => {
   try {
     const result = await db.query(query, [id, req.user.id]);
     if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Quest not found' });
+      return res.status(404).json({ error: "Quest not found" });
     }
-    res.json({ message: 'Quest deleted successfully' });
+    res.json({ message: "Quest deleted successfully" });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: 'Database error deleting quest' });
+    res.status(500).json({ error: "Database error deleting quest" });
   }
 };
 
